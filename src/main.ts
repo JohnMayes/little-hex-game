@@ -9,11 +9,13 @@ import MovementManger from './MovementManger.js';
 function gameInit() {
   // called once after the engine starts up
   // setup the game
-
-  gameStore.state.units;
-
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  LittleJS.setCanvasFixedSize(vec2(width, height));
   LittleJS.setCameraPos(vec2(9, 8));
   LittleJS.setCameraScale(50);
+  gameStore.state.units;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -25,19 +27,19 @@ function gameUpdate() {
   }
 
   if (keyIsDown('KeyW')) {
-    cameraPos.y += 0.5;
+    cameraPos.y = Math.min(18, cameraPos.y + 0.5)
   }
 
   if (keyIsDown('KeyS')) {
-    cameraPos.y -= 0.5
+    cameraPos.y = Math.max(0, cameraPos.y - 0.5)
   }
 
   if (keyIsDown('KeyA')) {
-    cameraPos.x -= 0.5
+    cameraPos.x = Math.max(0, cameraPos.x - 0.5)
   }
 
   if (keyIsDown('KeyD')) {
-    cameraPos.x += 0.5
+    cameraPos.x = Math.min(20, cameraPos.x + 0.5)
   }
 
   // Select Unit in Hex
@@ -79,11 +81,8 @@ function gameRender() {
     if (isMovementPhase && gameStore.state.selectedUnit) {
       const key = `${hex.q},${hex.r}`;
       if (reachable.has(key)) {
-        // Highlight reachable hex
-        // outlineColor = new Color(1, 1, 1);
         baseColor = baseColor.scale(1.1);
       } else {
-        // Dim unreachable hex
         baseColor = baseColor.scale(0.9); 
       }
     }
@@ -97,7 +96,7 @@ function gameRender() {
 function gameRenderPost() {
   // called after objects are rendered
   // draw effects or hud that appear above all objects
-  LittleJS.drawTextScreen(gameStore.state.selectedUnit?.remainingMovement.toString() || '', LittleJS.mainCanvasSize.scale(.5), 80);
+  // LittleJS.drawTextScreen(gameStore.state.selectedUnit?.remainingMovement.toString() || '', LittleJS.mainCanvasSize.scale(.5), 80);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

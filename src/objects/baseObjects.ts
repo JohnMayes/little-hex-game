@@ -5,7 +5,7 @@ import { Terrain, tileVisibility } from '../types/terrain';
 export class Counter extends EngineObject  {
   draggable: boolean;
   dragging: boolean;
-  // dragOffset: Vector2;
+  dragOffset: Vector2;
   lastPos: Vector2;
   
   constructor(pos: Vector2) {
@@ -13,7 +13,7 @@ export class Counter extends EngineObject  {
     this.size = vec2(1);
     this.dragging = false;
     this.draggable = false;
-    // this.dragOffset = vec2();
+    this.dragOffset = vec2();
     this.lastPos = pos;
   }
 
@@ -34,14 +34,13 @@ export class Counter extends EngineObject  {
       if (inX && inY) {
         this.lastPos = this.pos;
         this.dragging = true;
-        // this.dragOffset = mousePos.subtract(this.pos); // save offset for smooth dragging
+        this.dragOffset = mousePos.subtract(this.pos); // save offset for smooth dragging
       }
     }
 
     // Drag while mouse is down
     if (mouseIsDown(0) && this.dragging) {
-      // this.pos = mousePos.subtract(this.dragOffset);
-      this.pos = mousePos;
+      this.pos = mousePos.subtract(this.dragOffset);
     }
 
     //Stop dragging when mouse is released
