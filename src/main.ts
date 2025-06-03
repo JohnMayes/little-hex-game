@@ -1,9 +1,9 @@
 'use strict';
 import * as LittleJS from '@littlejs'
-import { Color, drawPoly, vec2, mouseWheel, clamp, keyIsDown, cameraPos, cameraScale } from '@littlejs'
+import { Color, drawPoly, drawLine, vec2, mouseWheel, clamp, keyIsDown, cameraPos, cameraScale } from '@littlejs'
 import { TerrainColor } from './types/terrain.js';
 import { gameStore, grid } from './store.js';
-import MovementManger from './MovementManger.js';
+import MovementManager from './MovementManger.js';
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameInit() {
@@ -15,7 +15,6 @@ function gameInit() {
   LittleJS.setCameraPos(vec2(9, 8));
   LittleJS.setCameraScale(50);
   gameStore.state.units;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -42,32 +41,19 @@ function gameUpdate() {
     cameraPos.x = Math.min(20, cameraPos.x + 0.5)
   }
 
-  // Select Unit in Hex
-  if (LittleJS.mouseWasPressed(0)) {
-    const { x, y } = grid.pointToHex(LittleJS.mousePos);
-    const counter = gameStore.state.units.find(unit => unit.pos.x === x && unit.pos.y === y);
-    gameStore.state.selectedUnit = counter;
-  }
-
-  // Movement manager
-  MovementManger.update()
-
+  // Movement manager handles all unit selection and movement
+  MovementManager.update()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameUpdatePost() {
   // called after physics and objects are updated
-  // setup camera and prepare for render
-  const phase = gameStore.state.phase;
-  const activeSide = gameStore.state.activePlayer;
-  if (phase === 'movement') {
-    const activeUnits = gameStore.state.units.filter(unit => unit.side === activeSide);
-    activeUnits.forEach((unit) => unit.draggable = true);
-  }
+  // No need for draggable logic with click-to-move
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameRender() {
+  // render hexes
   const reachable = new Set(gameStore.state.reachableHexes?.map(h => `${h.q},${h.r}`));
   const isMovementPhase = gameStore.state.phase === 'movement';
 
@@ -89,14 +75,34 @@ function gameRender() {
 
     drawPoly(corners, baseColor, 0.05, outlineColor);
   }
-}
 
+  // Draw movement path preview
+  if (gameStore.state.movementPath && gameStore.state.movementPath.length > 1) {
+    const pathColor = new Color().setHex('#FFFF00'); // Yellow path
+    const pathWidth = 0.1;
+    
+    for (let i = 0; i < gameStore.state.movementPath.length - 1; i++) {
+      const start = gameStore.state.movementPath[i];
+      const end = gameStore.state.movementPath[i + 1];
+      drawLine(vec2(start.x, start.y), vec2(end.x, end.y), pathWidth, pathColor);
+    }
+    
+    // Optional: Draw arrows or dots along the path
+    gameStore.state.movementPath.forEach((point, index) => {
+      if (index > 0) { // Skip starting position
+        const dotColor = new Color().setHex('#FF8800'); // Orange dots
+        const dotSize = vec2(0.15, 0.15);
+        LittleJS.drawTile(vec2(point.x, point.y), dotSize, undefined, dotColor);
+      }
+    });
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameRenderPost() {
   // called after objects are rendered
   // draw effects or hud that appear above all objects
-  // LittleJS.drawTextScreen(gameStore.state.selectedUnit?.remainingMovement.toString() || '', LittleJS.mainCanvasSize.scale(.5), 80);
+  LittleJS.drawTextScreen(gameStore.state.selectedUnit?.remainingMovement.toString() || '', LittleJS.mainCanvasSize.scale(.5), 80);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

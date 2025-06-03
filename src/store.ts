@@ -1,5 +1,5 @@
 import { Store } from "@tanstack/store";
-import { Grid, OffsetCoordinates, AxialCoordinates } from "honeycomb-grid";
+import { Grid, OffsetCoordinates, AxialCoordinates, Point } from "honeycomb-grid";
 import { createUnit, Unit } from "./objects/unitObjects";
 import { UnitSide, UnitType } from "./types/units";
 import { Tile } from "./objects/baseObjects";
@@ -22,6 +22,7 @@ interface GameState {
   units: Unit[];
   selectedUnit: Unit | undefined;
   reachableHexes: AxialCoordinates[];
+  movementPath: Point[];
 }
 
 export const grid = new Grid(Tile, TEST_MAP.map(Tile.create));
@@ -44,7 +45,8 @@ const initialGameState: GameState = {
     return counter;
   }),
   selectedUnit: undefined,
-  reachableHexes: []
+  reachableHexes: [],
+  movementPath: []
 } 
 
 export const gameStore = new Store(initialGameState);
