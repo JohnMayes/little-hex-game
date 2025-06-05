@@ -5,10 +5,19 @@ import { AxialCoordinates, Point, ring } from 'honeycomb-grid';
 import { aStar } from 'abstract-astar';
 import { Tile } from './objects/baseObjects';
 
-// Helper functions
-export function getReachableHexes(start: Tile, movementPoints: number): Tile[] {
-  const visited = new Map<string, number>(); // key: tile id, value: cost
+// Optimized reachable hex calculation with caching
+const reachableHexCache = new Map<string, { hexSet: Set<string>, tiles: Tile[] }>();
+
+export function getReachableHexes(start: Tile, movementPoints: number): { hexSet: Set<string>, tiles: Tile[] } {
+  const cacheKey = `${start.q},${start.r},${movementPoints}`;
+  
+  if (reachableHexCache.has(cacheKey)) {
+    return reachableHexCache.get(cacheKey)!;
+  }
+
+  const visited = new Map<string, number>();
   const queue: { tile: Tile; cost: number }[] = [{ tile: start, cost: 0 }];
+  const reachableTiles: Tile[] = [];
 
   while (queue.length > 0) {
     const { tile, cost } = queue.shift()!;
@@ -16,6 +25,7 @@ export function getReachableHexes(start: Tile, movementPoints: number): Tile[] {
 
     if (visited.has(key) && visited.get(key)! <= cost) continue;
     visited.set(key, cost);
+    reachableTiles.push(tile);
 
     const neighbors = grid.traverse(ring({ radius: 1, center: tile })).toArray();
 
@@ -27,34 +37,42 @@ export function getReachableHexes(start: Tile, movementPoints: number): Tile[] {
     }
   }
 
-  return Array.from(visited.keys()).map((key) => {
-    const [q, r] = key.split(',').map(Number);
-    return grid.getHex({ q, r })!;
-  });
+  const hexSet = new Set(visited.keys());
+  const result = { hexSet, tiles: reachableTiles };
+  reachableHexCache.set(cacheKey, result);
+  
+  return result;
 }
 
-function hexesInRange(center: { q: number; r: number }, movementPoints: number): { q: number; r: number }[] {
+function getReachableHexSet(center: { q: number; r: number }, movementPoints: number): Set<string> {
   const centerTile = grid.getHex(center);
-  if (!centerTile) return [];
+  if (!centerTile) return new Set();
 
-  const reachableTiles = getReachableHexes(centerTile, movementPoints);
-
-  return reachableTiles.map(({ q, r }) => ({ q, r }));
+  const { hexSet } = getReachableHexes(centerTile, movementPoints);
+  return hexSet;
 }
 
 function setHexesInRange(center: { q: number; r: number }, distance: number) {
-  gameStore.state.reachableHexes = hexesInRange(center, distance);
+  const centerTile = grid.getHex(center);
+  if (!centerTile) {
+    gameStore.state.reachableHexes = [];
+    return;
+  }
+
+  const { tiles } = getReachableHexes(centerTile, distance);
+  gameStore.state.reachableHexes = tiles.map(({ q, r }) => ({ q, r }));
 }
 
 function calculateMovementPath(fromPos: Point, toPos: Point, movementPoints: number) {
   const start = grid.pointToHex(fromPos);
   const goal = grid.pointToHex(toPos);
 
-  // First collect reachable tiles
-  const reachable = new Set(getReachableHexes(start, movementPoints).map(t => `${t.x},${t.y}`));
+  // Get reachable tiles with optimized lookup
+  const { hexSet: reachableSet } = getReachableHexes(start, movementPoints);
+  const goalKey = `${goal.q},${goal.r}`;
 
   // If goal is not reachable, exit early
-  if (!reachable.has(`${goal.x},${goal.y}`)) return [];
+  if (!reachableSet.has(goalKey)) return [];
 
   // Now safely run aStar since goal is within range
   const shortestPath = aStar<Tile>({
@@ -65,11 +83,10 @@ function calculateMovementPath(fromPos: Point, toPos: Point, movementPoints: num
       grid
         .traverse(ring({ radius: 1, center }))
         .toArray()
-        .filter(n => reachable.has(`${n.x},${n.y}`)), // restrict neighbors
+        .filter(n => reachableSet.has(`${n.q},${n.r}`)), // Use axial coordinates
     actualCostToMove: (_, __, tile) => tile.cost,
   });
 
-  // return shortestPath?.map(({ x, y }) => ({ x, y })) || [];
   return shortestPath;
 }
 
@@ -87,8 +104,8 @@ function selectUnit(unit: Unit) {
   unit.selected = true;
   gameStore.state.selectedUnit = unit;
 
-  // Calculate reachable hexes
-  const unitHex = grid.pointToHex(unit.pos);
+  // Calculate reachable hexes using cached coordinates
+  const unitHex = unit.getHexCoords(grid);
   setHexesInRange(unitHex, unit.remainingMovement);
 }
 
@@ -121,7 +138,7 @@ function attemptMove(unit: Unit, targetPos: Point) {
             deselectUnit();
           } else {
             // Recalculate reachable hexes for continued movement
-            const newHex = grid.pointToHex(unit.pos);
+            const newHex = unit.getHexCoords(grid);
             setHexesInRange(newHex, remainingMovement);
           }
         }
@@ -140,9 +157,19 @@ function deselectUnit() {
     gameStore.state.selectedUnit.selected = false;
     gameStore.state.selectedUnit = undefined;
     gameStore.state.reachableHexes = [];
-    gameStore.state.movementPath = []; // Clear any movement preview
+    gameStore.state.movementPath = [];
   }
 }
+
+// Clear reachable hex cache when needed (e.g., turn changes)
+export function clearReachableHexCache() {
+  reachableHexCache.clear();
+}
+
+// Path preview optimization
+let lastPreviewHex: string | null = null;
+let previewThrottleTime = 0;
+const PREVIEW_THROTTLE_MS = 100; // Only update preview every 100ms
 
 const MovementManager = {
   update() {
@@ -162,7 +189,8 @@ const MovementManager = {
           if (gameStore.state.selectedUnit === clickedUnit) {
             // Clicking same unit - recalculate range (refresh)
             const range = clickedUnit.remainingMovement;
-            setHexesInRange({ q, r }, range);
+            const unitHex = clickedUnit.getHexCoords(grid);
+            setHexesInRange(unitHex, range);
           } else {
             // Select new unit
             selectUnit(clickedUnit);
@@ -177,38 +205,50 @@ const MovementManager = {
       // Right click or ESC to deselect
       if (LittleJS.mouseWasPressed(2) || LittleJS.keyWasPressed('Escape')) {
         deselectUnit();
+        lastPreviewHex = null; // Reset preview cache
       }
 
-      // Optional: Show movement path preview on mouse hover
+      // Optimized movement path preview with throttling
       if (
         gameStore.state.selectedUnit &&
         !gameStore.state.selectedUnit.isMoving
       ) {
+        const currentTime = Date.now();
         const mouseHex = grid.pointToHex(LittleJS.mousePos);
-        const targetHex = { q: mouseHex.q, r: mouseHex.r };
+        const currentHexKey = `${mouseHex.q},${mouseHex.r}`;
 
-        const isReachable = gameStore.state.reachableHexes?.some(
-          (hex) => hex.q === targetHex.q && hex.r === targetHex.r
-        );
+        // Only update preview if hex changed and enough time has passed
+        if (
+          currentHexKey !== lastPreviewHex &&
+          currentTime > previewThrottleTime
+        ) {
+          lastPreviewHex = currentHexKey;
+          previewThrottleTime = currentTime + PREVIEW_THROTTLE_MS;
 
-        if (isReachable) {
-          // Calculate and store path for rendering
-          const targetPos = LittleJS.vec2(mouseHex.x, mouseHex.y);
-          gameStore.state.movementPath = calculateMovementPath(
-            gameStore.state.selectedUnit.pos,
-            targetPos,
-            gameStore.state.selectedUnit.movement
-          )!.map((tile) => {
-            const x = tile.x;
-            const y = tile.y
+          const isReachable = gameStore.state.reachableHexes?.some(
+            (hex) => hex.q === mouseHex.q && hex.r === mouseHex.r
+          );
 
-            return { x, y }
-          });
-        } else {
-          gameStore.state.movementPath = [];
+          if (isReachable) {
+            // Calculate and store path for rendering
+            const targetPos = LittleJS.vec2(mouseHex.x, mouseHex.y);
+            const path = calculateMovementPath(
+              gameStore.state.selectedUnit.pos,
+              targetPos,
+              gameStore.state.selectedUnit.movement
+            );
+            
+            gameStore.state.movementPath = path?.map((tile) => ({
+              x: tile.x,
+              y: tile.y
+            })) || [];
+          } else {
+            gameStore.state.movementPath = [];
+          }
         }
       } else {
         gameStore.state.movementPath = [];
+        lastPreviewHex = null;
       }
     }
   },

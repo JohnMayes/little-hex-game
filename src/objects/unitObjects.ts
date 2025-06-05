@@ -25,6 +25,7 @@ import {
   vec2,
   time,
 } from '@littlejs';
+import { AxialCoordinates } from 'honeycomb-grid';
 
 export class Unit extends Counter {
   side: UnitSide;
@@ -35,6 +36,10 @@ export class Unit extends Counter {
   defense: number;
   remainingMovement: number;
   selected: boolean;
+
+  // Cached hex coordinates to avoid repeated conversions
+  hexCoords: AxialCoordinates;
+  hexCoordsDirty: boolean;
 
   // Animation properties
   isMoving: boolean;
@@ -57,6 +62,10 @@ export class Unit extends Counter {
     this.defense = unitStats.rating.defense;
     this.remainingMovement = this.movement;
     this.selected = false;
+
+    // Initialize hex coordinates cache
+    this.hexCoords = { q: 0, r: 0 };
+    this.hexCoordsDirty = true;
 
     // Animation initialization
     this.isMoving = false;
@@ -142,7 +151,7 @@ export class Unit extends Counter {
 
   completeMovement() {
     // Snap to final position
-    this.pos = this.movementPath[this.movementPath.length - 1];
+    this.setPosition(this.movementPath[this.movementPath.length - 1]);
 
     // Reset animation state
     this.isMoving = false;
@@ -154,6 +163,22 @@ export class Unit extends Counter {
       this.moveCompleteCallback(this.remainingMovement);
       this.moveCompleteCallback = null;
     }
+  }
+
+  // Get cached hex coordinates, updating if needed
+  getHexCoords(grid: any): AxialCoordinates {
+    if (this.hexCoordsDirty) {
+      const hex = grid.pointToHex(this.pos);
+      this.hexCoords = { q: hex.q, r: hex.r };
+      this.hexCoordsDirty = false;
+    }
+    return this.hexCoords;
+  }
+
+  // Mark hex coordinates as dirty when position changes
+  setPosition(newPos: Vector2) {
+    this.pos = newPos;
+    this.hexCoordsDirty = true;
   }
 
   // Check if unit can be selected (not moving)
