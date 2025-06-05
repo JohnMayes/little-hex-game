@@ -24,7 +24,6 @@ import {
   drawTile,
   vec2,
   time,
-  lerp,
 } from '@littlejs';
 
 export class Unit extends Counter {
@@ -71,10 +70,10 @@ export class Unit extends Counter {
   // New animated movement function
   moveAnimated(
     path: Vector2[],
-    hexesMoved: number,
+    movementCost: number,
     callback: (remainingMovement: number) => void
   ) {
-    if (hexesMoved <= 0 || path.length === 0) {
+    if (movementCost <= 0 || path.length === 0) {
       callback(this.remainingMovement);
       return;
     }
@@ -86,7 +85,7 @@ export class Unit extends Counter {
     this.moveStartTime = time;
 
     // Calculate remaining movement
-    const remainingMovement = this.remainingMovement - hexesMoved;
+    const remainingMovement = this.remainingMovement - movementCost;
     this.remainingMovement = remainingMovement;
 
     // Store callback for when animation completes

@@ -51,12 +51,14 @@ export class Counter extends EngineObject  {
 }
 
 export class Tile extends defineHex({dimensions: 1}) {
-  static create(config: AxialCoordinates & { terrain: Terrain }) {
-    const tile = new Tile(config)
-    tile.terrain = config.terrain
+  static create(config: AxialCoordinates & { terrain: Terrain, cost: number }) {
+    const tile = new Tile(config);
+    tile.terrain = config.terrain;
+    tile.cost = config.cost
     return tile
   }
 
   visibility: tileVisibility = 'undiscovered'
   terrain!: Terrain
+  cost!: number 
 }

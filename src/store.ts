@@ -25,7 +25,13 @@ interface GameState {
   movementPath: Point[];
 }
 
-export const grid = new Grid(Tile, TEST_MAP.map(Tile.create));
+export const grid = new Grid(
+  Tile,
+  TEST_MAP.map(tile => Tile.create({
+    ...tile,
+    cost: tile.terrain.movementCost,
+  }))
+);
 
 const setup: Setup[] = [
   {unit: 'heavy_tank', side: 'blue', pos: {col: 1, row: 1}},
