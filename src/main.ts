@@ -4,6 +4,7 @@ import { Color, drawPoly, drawLine, vec2, mouseWheel, clamp, keyIsDown, cameraPo
 import { TerrainColor } from './types/terrain.js';
 import { gameStore, grid } from './store.js';
 import MovementManager from './MovementManger.js';
+import TurnManager from './TurnManager.js';
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameInit() {
@@ -43,6 +44,7 @@ function gameUpdate() {
 
   // Movement manager handles all unit selection and movement
   MovementManager.update()
+  TurnManager.update()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -102,7 +104,11 @@ function gameRender() {
 function gameRenderPost() {
   // called after objects are rendered
   // draw effects or hud that appear above all objects
-  LittleJS.drawTextScreen(gameStore.state.selectedUnit?.remainingMovement.toString() || '', LittleJS.mainCanvasSize.scale(.5), 80);
+  if (gameStore.state.phase === 'movement') {
+    LittleJS.drawTextScreen('Player: ' + gameStore.state.movingPlayer + ' Phase: ' + gameStore.state.phase, LittleJS.mainCanvasSize.scale(.5), 80);
+  } else if (gameStore.state.phase === 'fire') {
+    LittleJS.drawTextScreen('Player: ' + gameStore.state.firingPlayer + ' Phase: ' + gameStore.state.phase, LittleJS.mainCanvasSize.scale(.5), 80);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -4,6 +4,7 @@ import { Unit } from './objects/unitObjects';
 import { AxialCoordinates, Point, ring } from 'honeycomb-grid';
 import { aStar } from 'abstract-astar';
 import { Tile } from './objects/baseObjects';
+import { deselectUnit } from './utils';
 
 // Optimized reachable hex calculation with caching
 const reachableHexCache = new Map<string, { hexSet: Set<string>, tiles: Tile[] }>();
@@ -152,15 +153,6 @@ function attemptMove(unit: Unit, targetPos: Point) {
   }
 }
 
-function deselectUnit() {
-  if (gameStore.state.selectedUnit) {
-    gameStore.state.selectedUnit.selected = false;
-    gameStore.state.selectedUnit = undefined;
-    gameStore.state.reachableHexes = [];
-    gameStore.state.movementPath = [];
-  }
-}
-
 // Clear reachable hex cache when needed (e.g., turn changes)
 export function clearReachableHexCache() {
   reachableHexCache.clear();
@@ -184,7 +176,7 @@ const MovementManager = {
             Math.abs(unit.pos.x - x) < 0.1 && Math.abs(unit.pos.y - y) < 0.1
         );
 
-        if (clickedUnit) {
+        if (clickedUnit && clickedUnit.side === gameStore.state.movingPlayer) {
           // Clicking on a unit - select it
           if (gameStore.state.selectedUnit === clickedUnit) {
             // Clicking same unit - recalculate range (refresh)

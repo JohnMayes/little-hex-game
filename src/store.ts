@@ -6,8 +6,8 @@ import { Tile } from "./objects/baseObjects";
 import { TEST_MAP } from "./defs/maps";
 import { vec2 } from "@littlejs";
 
-type Side = 'red' | 'blue'
-type Phase = 'movement' | 'fire';
+export type MovingPlayer = 'red' | 'blue'
+export type Phase = 'movement' | 'fire';
 
 type Setup = {
   unit: UnitType,
@@ -17,7 +17,8 @@ type Setup = {
 
 interface GameState {
   turn: number;
-  activePlayer: Side;
+  movingPlayer: MovingPlayer;
+  firingPlayer: MovingPlayer;
   phase: Phase;
   units: Unit[];
   selectedUnit: Unit | undefined;
@@ -42,17 +43,17 @@ const setup: Setup[] = [
 
 const initialGameState: GameState = {
   turn: 1,
-  activePlayer: 'blue',
+  movingPlayer: 'blue',
+  firingPlayer: 'blue',
   phase: 'movement',
   units: setup.map((item) => {
     const hex = grid.getHex(item.pos);
     const vec = vec2(hex?.x, hex?.y);
-    const counter = createUnit(vec, item.side, item.unit)
-    return counter;
+    return createUnit(vec, item.side, item.unit);
   }),
   selectedUnit: undefined,
   reachableHexes: [],
-  movementPath: []
-} 
+  movementPath: [],
+};
 
 export const gameStore = new Store(initialGameState);
