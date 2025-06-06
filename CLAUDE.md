@@ -19,7 +19,8 @@ This is a hex-based strategy game built with TypeScript and the LittleJS engine.
 
 ### Key Managers
 - **MovementManager** (`src/MovementManger.ts`): Handles unit selection, movement validation, A* pathfinding, and animated movement
-- **CombatManager** (`src/CombatManager.ts`): Currently minimal, placeholder for future combat logic
+- **CombatManager** (`src/CombatManager.ts`): Handles line-of-sight calculations, unit targeting, and combat resolution during fire phase
+- **TurnManager** (`src/TurnManager.ts`): Manages turn phases and player transitions
 
 ### Unit System
 - **Unit Class** (`src/objects/unitObjects.ts`): Extends base Counter class with combat stats, movement animations, and selection logic
@@ -30,6 +31,7 @@ This is a hex-based strategy game built with TypeScript and the LittleJS engine.
 - **Tile Class** (`src/objects/baseObjects.ts`): Extends Honeycomb's defineHex with terrain and movement cost data
 - **Pathfinding**: Uses abstract-astar library with movement cost constraints
 - **Coordinate Systems**: Seamlessly converts between pixel coordinates and hex coordinates
+- **Line of Sight**: Hex line algorithm for LOS calculations with terrain-based blocking rules
 
 ### Rendering Pipeline
 - **Main Loop** (`src/main.ts`): Standard LittleJS game loop with hex rendering and camera controls
@@ -43,3 +45,5 @@ This is a hex-based strategy game built with TypeScript and the LittleJS engine.
 - Movement animations use linear interpolation with configurable speed (0.3s per hex)
 - Reachable hex calculation uses breadth-first search with movement point constraints
 - Camera bounds constrained to prevent viewing outside game area (0-20 x, 0-18 y)
+- LOS calculations use caching for performance optimization
+- Terrain system expanded with LOS values (firing/intervening/target) for combat mechanics

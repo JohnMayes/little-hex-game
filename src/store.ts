@@ -15,6 +15,14 @@ type Setup = {
   pos: OffsetCoordinates
 }
 
+interface CombatState {
+  selectedFiringUnit: Unit | undefined;
+  validTargets: Unit[];
+  hoveredTarget: Unit | undefined;
+  losLines: Array<{ from: Point; to: Point; blocked: boolean }>;
+  visibleHexes: AxialCoordinates[];
+}
+
 interface GameState {
   turn: number;
   movingPlayer: MovingPlayer;
@@ -24,6 +32,7 @@ interface GameState {
   selectedUnit: Unit | undefined;
   reachableHexes: AxialCoordinates[];
   movementPath: Point[];
+  combat: CombatState;
 }
 
 export const grid = new Grid(
@@ -54,6 +63,13 @@ const initialGameState: GameState = {
   selectedUnit: undefined,
   reachableHexes: [],
   movementPath: [],
+  combat: {
+    selectedFiringUnit: undefined,
+    validTargets: [],
+    hoveredTarget: undefined,
+    losLines: [],
+    visibleHexes: []
+  }
 };
 
 export const gameStore = new Store(initialGameState);

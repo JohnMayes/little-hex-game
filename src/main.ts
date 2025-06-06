@@ -5,6 +5,7 @@ import { TerrainColor } from './types/terrain.js';
 import { gameStore, grid } from './store.js';
 import MovementManager from './MovementManger.js';
 import TurnManager from './TurnManager.js';
+import CombatManager from './CombatManager.js';
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameInit() {
@@ -43,8 +44,9 @@ function gameUpdate() {
   }
 
   // Movement manager handles all unit selection and movement
-  MovementManager.update()
   TurnManager.update()
+  MovementManager.update()
+  CombatManager.update()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,9 @@ function gameUpdatePost() {
 function gameRender() {
   // render hexes
   const reachable = new Set(gameStore.state.reachableHexes?.map(h => `${h.q},${h.r}`));
+  const visibleHexes = new Set(gameStore.state.combat.visibleHexes?.map(h => `${h.q},${h.r}`));
   const isMovementPhase = gameStore.state.phase === 'movement';
+  const isCombatPhase = gameStore.state.phase === 'fire'
 
   for (const hex of grid) {
     const points = hex.corners;
@@ -71,7 +75,16 @@ function gameRender() {
       if (reachable.has(key)) {
         baseColor = baseColor.scale(1.1);
       } else {
-        baseColor = baseColor.scale(0.9); 
+        baseColor = baseColor.scale(0.8); 
+      }
+    }
+
+    if (isCombatPhase && gameStore.state.combat.selectedFiringUnit) {
+      const key = `${hex.q},${hex.r}`;
+      if (visibleHexes.has(key)) {
+        baseColor = baseColor.scale(1.1);
+      } else {
+        baseColor = baseColor.scale(0.8);
       }
     }
 
