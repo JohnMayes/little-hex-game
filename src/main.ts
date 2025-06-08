@@ -63,19 +63,34 @@ function gameRender() {
   const isMovementPhase = gameStore.state.phase === 'movement';
   const isCombatPhase = gameStore.state.phase === 'fire'
 
+  if (isCombatPhase) {
+    const selectedFiringUnit = CombatManager.getSelectedFiringUnit();
+    const hoveredTarget = CombatManager.getHoveredTarget();
+    const validTargets = CombatManager.getValidTargets();
+    const losLine = CombatManager.getLOSLine()
+
+    if (losLine && selectedFiringUnit && hoveredTarget) {
+      const lineColor = validTargets.some(unit => unit == hoveredTarget) 
+        ? new Color(0,1,0)  // Green for valid targets
+        : new Color(1,0,0); // Red for invalid targets
+      
+      drawLine(vec2(losLine.from.x, losLine.from.y), vec2(losLine.to.x, losLine.to.y), 0.1, lineColor);
+    }
+  }
+
   for (const hex of grid) {
     const points = hex.corners;
     const corners = points.map(c => vec2(c.x, c.y));
 
     let baseColor = new Color().setHex(TerrainColor[hex.terrain.type]);
-    let outlineColor = new Color(0, 0, 0); 
+    let outlineColor = new Color(0, 0, 0);
 
     if (isMovementPhase && gameStore.state.selectedUnit) {
       const key = `${hex.q},${hex.r}`;
       if (reachable.has(key)) {
         baseColor = baseColor.scale(1.1);
       } else {
-        baseColor = baseColor.scale(0.8); 
+        baseColor = baseColor.scale(0.8);
       }
     }
 
@@ -95,13 +110,13 @@ function gameRender() {
   if (gameStore.state.movementPath && gameStore.state.movementPath.length > 1) {
     const pathColor = new Color().setHex('#FFFF00'); // Yellow path
     const pathWidth = 0.1;
-    
+
     for (let i = 0; i < gameStore.state.movementPath.length - 1; i++) {
       const start = gameStore.state.movementPath[i];
       const end = gameStore.state.movementPath[i + 1];
       drawLine(vec2(start.x, start.y), vec2(end.x, end.y), pathWidth, pathColor);
     }
-    
+
     // Optional: Draw arrows or dots along the path
     gameStore.state.movementPath.forEach((point, index) => {
       if (index > 0) { // Skip starting position

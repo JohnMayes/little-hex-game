@@ -19,7 +19,7 @@ interface CombatState {
   selectedFiringUnit: Unit | undefined;
   validTargets: Unit[];
   hoveredTarget: Unit | undefined;
-  losLines: Array<{ from: Point; to: Point; blocked: boolean }>;
+  losLine: { from: Point; to: Point; blocked: boolean } | undefined;
   visibleHexes: AxialCoordinates[];
 }
 
@@ -67,7 +67,7 @@ const initialGameState: GameState = {
     selectedFiringUnit: undefined,
     validTargets: [],
     hoveredTarget: undefined,
-    losLines: [],
+    losLine: undefined,
     visibleHexes: []
   }
 };

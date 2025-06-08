@@ -4,7 +4,7 @@ import { Unit } from './objects/unitObjects';
 import { Tile } from './objects/baseObjects';
 import { TerrainType, LOS_VALUES } from './types/terrain';
 import { AxialCoordinates } from 'honeycomb-grid';
-import { deselectUnit } from './utils';
+import { deselectUnit, clearFiringSelection } from './utils';
 
 // Cache for LOS calculations to avoid expensive recalculations
 const losCache = new Map<string, boolean>();
@@ -198,16 +198,22 @@ export function getVisibleHexes(fromUnit: Unit): AxialCoordinates[] {
 }
 
 /**
- * Get all valid targets for a firing unit (enemy units with LOS)
+ * Get all valid targets for a firing unit (enemy units within range and with LOS)
  */
 export function getValidTargets(firingUnit: Unit): Unit[] {
   const enemyUnits = gameStore.state.units.filter(
     unit => unit.side !== firingUnit.side
   );
   
-  return getUnitsWithLOSTo(firingUnit, enemyUnits).filter(
-    unit => unit.side !== firingUnit.side
-  );
+  // Filter by range first, then check LOS
+  const unitsInRange = enemyUnits.filter(unit => {
+    const firingHex = grid.pointToHex(firingUnit.pos);
+    const targetHex = grid.pointToHex(unit.pos);
+    const distance = grid.distance(firingHex, targetHex);
+    return distance <= firingUnit.range;
+  });
+  
+  return getUnitsWithLOSTo(firingUnit, unitsInRange);
 }
 
 // Combat state is now managed in the central game store
@@ -215,19 +221,17 @@ export function getValidTargets(firingUnit: Unit): Unit[] {
 function selectFiringUnit(unit: Unit) {
   // Only allow selection during fire phase and if it's the correct player's turn
   if (gameStore.state.phase !== 'fire' || unit.side !== gameStore.state.firingPlayer) {
-    console.log('Cannot select unit for firing - wrong phase or player');
     return;
   }
 
   // Clear previous selections
   gameStore.state.units.forEach((u) => (u.selected = false));
+  clearFiringSelection();
 
   // Select new unit
   unit.selected = true;
   gameStore.state.selectedUnit = unit;
   
-  // Clear previous selection
-  clearFiringSelection();
   
   // Select new firing unit
   gameStore.setState(state => ({
@@ -240,65 +244,37 @@ function selectFiringUnit(unit: Unit) {
     }
   }));
   
-  console.log(`Selected firing unit, found ${gameStore.state.combat.validTargets.length} valid targets`);
-}
-
-function clearFiringSelection() {
-  gameStore.setState(state => ({
-    ...state,
-    combat: {
-      selectedFiringUnit: undefined,
-      validTargets: [],
-      hoveredTarget: undefined,
-      losLines: [],
-      visibleHexes: []
-    }
-  }));
+  // Update LOS visualization for new selection
+  updateLOSVisualization();
 }
 
 function updateLOSVisualization() {
-  const { selectedFiringUnit, validTargets, hoveredTarget } = gameStore.state.combat;
+  const { selectedFiringUnit, hoveredTarget } = gameStore.state.combat;
   
-  if (!selectedFiringUnit) {
+  if (!selectedFiringUnit || !hoveredTarget) {
     gameStore.setState(state => ({
       ...state,
       combat: {
         ...state.combat,
-        losLines: []
+        losLine: undefined
       }
     }));
     return;
   }
   
-  // Create LOS lines to all valid targets
-  let losLines = validTargets.map(target => {
-    const losResult = calculateLOSBetweenUnits(selectedFiringUnit, target);
-    return {
-      from: selectedFiringUnit.pos,
-      to: target.pos,
-      blocked: !losResult.hasLOS
-    };
-  });
-  
-  // Add line to hovered target if it's not a valid target
-  if (hoveredTarget && 
-      !validTargets.some((target) => target == hoveredTarget)) {
-    const losResult = calculateLOSBetweenUnits(
-      selectedFiringUnit, 
-      hoveredTarget
-    );
-    losLines.push({
-      from: selectedFiringUnit.pos,
-      to: hoveredTarget.pos,
-      blocked: !losResult.hasLOS
-    });
-  }
+  // Create LOS line to hovered target
+  const losResult = calculateLOSBetweenUnits(selectedFiringUnit, hoveredTarget);
+  const losLine = {
+    from: selectedFiringUnit.pos,
+    to: hoveredTarget.pos,
+    blocked: !losResult.hasLOS
+  };
   
   gameStore.setState(state => ({
     ...state,
     combat: {
       ...state.combat,
-      losLines
+      losLine
     }
   }));
 }
@@ -336,6 +312,7 @@ const CombatManager = {
       if (LittleJS.mouseWasPressed(2) || LittleJS.keyWasPressed('Escape')) {
         deselectUnit();
         clearFiringSelection();
+        updateLOSVisualization();
       }
       
       // Update hovered target for LOS visualization
@@ -362,7 +339,7 @@ const CombatManager = {
   getSelectedFiringUnit: () => gameStore.state.combat.selectedFiringUnit,
   getValidTargets: () => gameStore.state.combat.validTargets,
   getHoveredTarget: () => gameStore.state.combat.hoveredTarget,
-  getLOSLines: () => gameStore.state.combat.losLines,
+  getLOSLine: () => gameStore.state.combat.losLine,
   getVisibleHexes: () => gameStore.state.combat.visibleHexes,
   
   // Utility functions

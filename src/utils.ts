@@ -8,3 +8,16 @@ export function deselectUnit() {
     gameStore.state.movementPath = [];
   }
 }
+
+export function clearFiringSelection() {
+  gameStore.setState(state => ({
+    ...state,
+    combat: {
+      selectedFiringUnit: undefined,
+      validTargets: [],
+      hoveredTarget: undefined,
+      losLine: undefined,
+      visibleHexes: []
+    }
+  }));
+}
