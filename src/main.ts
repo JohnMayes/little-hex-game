@@ -63,21 +63,6 @@ function gameRender() {
   const isMovementPhase = gameStore.state.phase === 'movement';
   const isCombatPhase = gameStore.state.phase === 'fire'
 
-  if (isCombatPhase) {
-    const selectedFiringUnit = CombatManager.getSelectedFiringUnit();
-    const hoveredTarget = CombatManager.getHoveredTarget();
-    const validTargets = CombatManager.getValidTargets();
-    const losLine = CombatManager.getLOSLine()
-
-    if (losLine && selectedFiringUnit && hoveredTarget) {
-      const lineColor = validTargets.some(unit => unit == hoveredTarget) 
-        ? new Color(0,1,0)  // Green for valid targets
-        : new Color(1,0,0); // Red for invalid targets
-      
-      drawLine(vec2(losLine.from.x, losLine.from.y), vec2(losLine.to.x, losLine.to.y), 0.1, lineColor);
-    }
-  }
-
   for (const hex of grid) {
     const points = hex.corners;
     const corners = points.map(c => vec2(c.x, c.y));
@@ -94,7 +79,7 @@ function gameRender() {
       }
     }
 
-    if (isCombatPhase && gameStore.state.combat.selectedFiringUnit) {
+    if (isCombatPhase && gameStore.state.selectedUnit) {
       const key = `${hex.q},${hex.r}`;
       if (visibleHexes.has(key)) {
         baseColor = baseColor.scale(1.1);

@@ -18,8 +18,6 @@ type Setup = {
 interface CombatState {
   selectedFiringUnit: Unit | undefined;
   validTargets: Unit[];
-  hoveredTarget: Unit | undefined;
-  losLine: { from: Point; to: Point; blocked: boolean } | undefined;
   visibleHexes: AxialCoordinates[];
 }
 
@@ -46,7 +44,7 @@ export const grid = new Grid(
 const setup: Setup[] = [
   {unit: 'heavy_tank', side: 'blue', pos: {col: 1, row: 1}},
   {unit: 'infantry', side: 'blue', pos: {col: 0, row: 0}},
-  {unit: 'missile_tank', side: 'red', pos: {col: 9, row: 9}},
+  {unit: 'missile_tank', side: 'red', pos: {col: 2, row: 2}},
   {unit: 'infantry', side: 'red', pos: {col: 10, row: 10}},
 ]
 
@@ -66,8 +64,6 @@ const initialGameState: GameState = {
   combat: {
     selectedFiringUnit: undefined,
     validTargets: [],
-    hoveredTarget: undefined,
-    losLine: undefined,
     visibleHexes: []
   }
 };

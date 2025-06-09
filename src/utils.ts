@@ -10,14 +10,16 @@ export function deselectUnit() {
 }
 
 export function clearFiringSelection() {
-  gameStore.setState(state => ({
-    ...state,
-    combat: {
-      selectedFiringUnit: undefined,
-      validTargets: [],
-      hoveredTarget: undefined,
-      losLine: undefined,
-      visibleHexes: []
-    }
-  }));
+  if (gameStore.state.selectedUnit) {
+
+    gameStore.setState(state => ({
+      ...state,
+      combat: {
+        selectedFiringUnit: undefined,
+        validTargets: [],
+        hoveredTarget: undefined,
+        visibleHexes: []
+      }
+    }));
+  }
 }

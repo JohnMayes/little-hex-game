@@ -1,6 +1,6 @@
 import { gameStore, MovingPlayer, Phase } from "./store";
 import { keyWasPressed } from "@littlejs";
-import { deselectUnit } from "./utils";
+import { deselectUnit, clearFiringSelection } from "./utils";
 
 // 1. Moving player moves
 // 2. Both sides conduct fire, moving player first 
@@ -27,10 +27,12 @@ const TurnManager = {
         if (state.firingPlayer === state.movingPlayer) {
           // Switch to other player’s fire turn
           deselectUnit()
+          clearFiringSelection();
           state.firingPlayer = getOtherPlayer(state.movingPlayer);
         } else {
           // Both players have fired, move to next turn
           deselectUnit()
+          clearFiringSelection();
           state.units.forEach(unit => unit.remainingMovement = unit.movement)
           const nextPlayer = getOtherPlayer(state.movingPlayer);
           state.movingPlayer = nextPlayer;
