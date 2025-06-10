@@ -105,9 +105,18 @@ function selectUnit(unit: Unit) {
   unit.selected = true;
   gameStore.state.selectedUnit = unit;
 
-  // Calculate reachable hexes using cached coordinates
+  // Auto-select the hex where the unit is located
   const unitHex = unit.getHexCoords(grid);
+  const unitTile = grid.getHex(unitHex);
+  gameStore.state.selectedHex = unitTile;
+
+  // Calculate reachable hexes using cached coordinates
   setHexesInRange(unitHex, unit.remainingMovement);
+}
+
+function selectHex(hex: { q: number; r: number; x: number; y: number }) {
+  const hexTile = grid.getHex({ q: hex.q, r: hex.r });
+  gameStore.state.selectedHex = hexTile;
 }
 
 function attemptMove(unit: Unit, targetPos: Point) {
@@ -191,12 +200,18 @@ const MovementManager = {
           // Clicking on empty hex with unit selected - try to move
           const targetPos = LittleJS.vec2(x, y);
           attemptMove(gameStore.state.selectedUnit, targetPos);
+          // Also select the clicked hex
+          selectHex(hex);
+        } else {
+          // No unit selected - just select the hex
+          selectHex(hex);
         }
       }
 
       // Right click or ESC to deselect
       if (LittleJS.mouseWasPressed(2) || LittleJS.keyWasPressed('Escape')) {
         deselectUnit();
+        gameStore.state.selectedHex = undefined;
         lastPreviewHex = null; // Reset preview cache
       }
 

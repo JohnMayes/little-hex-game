@@ -6,17 +6,25 @@ import { gameStore, grid } from './store.js';
 import MovementManager from './MovementManger.js';
 import TurnManager from './TurnManager.js';
 import CombatManager from './CombatManager.js';
+import { UIManager } from './UI.js';
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameInit() {
   // called once after the engine starts up
   // setup the game
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  LittleJS.setCanvasFixedSize(vec2(width, height));
+  updateCanvasSize();
   LittleJS.setCameraPos(vec2(9, 8));
   LittleJS.setCameraScale(50);
   gameStore.state.units;
+
+  // Add window resize listener for responsive design
+  window.addEventListener('resize', updateCanvasSize);
+}
+
+function updateCanvasSize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  LittleJS.setCanvasFixedSize(vec2(width, height));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,6 +77,11 @@ function gameRender() {
 
     let baseColor = new Color().setHex(TerrainColor[hex.terrain.type]);
     let outlineColor = new Color(0, 0, 0);
+    let outlineWidth = 0.05;
+
+    if (gameStore.state.selectedHex && hex == gameStore.state.selectedHex) {
+      baseColor = baseColor.scale(1.2);
+    }
 
     if (isMovementPhase && gameStore.state.selectedUnit) {
       const key = `${hex.q},${hex.r}`;
@@ -88,7 +101,7 @@ function gameRender() {
       }
     }
 
-    drawPoly(corners, baseColor, 0.05, outlineColor);
+    drawPoly(corners, baseColor, outlineWidth, outlineColor);
   }
 
   // Draw movement path preview
@@ -117,11 +130,7 @@ function gameRender() {
 function gameRenderPost() {
   // called after objects are rendered
   // draw effects or hud that appear above all objects
-  if (gameStore.state.phase === 'movement') {
-    LittleJS.drawTextScreen('Player: ' + gameStore.state.movingPlayer + ' Phase: ' + gameStore.state.phase, LittleJS.mainCanvasSize.scale(.5), 80);
-  } else if (gameStore.state.phase === 'fire') {
-    LittleJS.drawTextScreen('Player: ' + gameStore.state.firingPlayer + ' Phase: ' + gameStore.state.phase, LittleJS.mainCanvasSize.scale(.5), 80);
-  }
+  UIManager.render();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

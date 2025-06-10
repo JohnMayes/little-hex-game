@@ -28,6 +28,7 @@ interface GameState {
   phase: Phase;
   units: Unit[];
   selectedUnit: Unit | undefined;
+  selectedHex: Tile | undefined;
   reachableHexes: AxialCoordinates[];
   movementPath: Point[];
   combat: CombatState;
@@ -59,6 +60,7 @@ const initialGameState: GameState = {
     return createUnit(vec, item.side, item.unit);
   }),
   selectedUnit: undefined,
+  selectedHex: undefined,
   reachableHexes: [],
   movementPath: [],
   combat: {
