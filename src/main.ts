@@ -16,7 +16,8 @@ function gameInit() {
   LittleJS.setCameraPos(vec2(9, 8));
   LittleJS.setCameraScale(50);
   gameStore.state.units;
-
+  UIManager.init();
+  
   // Add window resize listener for responsive design
   window.addEventListener('resize', updateCanvasSize);
 }
