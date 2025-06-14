@@ -1,12 +1,12 @@
 'use strict';
 import * as LittleJS from '@littlejs'
-import { Color, drawPoly, drawLine, vec2, mouseWheel, clamp, keyIsDown, cameraPos, cameraScale } from '@littlejs'
+import { Color, drawPoly, drawLine, vec2, mouseWheel, clamp, keyIsDown, cameraPos, cameraScale, initUISystem, mainCanvasSize } from '@littlejs'
 import { TerrainColor } from './types/terrain.js';
 import { gameStore, grid } from './store.js';
 import MovementManager from './MovementManger.js';
 import TurnManager from './TurnManager.js';
 import CombatManager from './CombatManager.js';
-import { UIManager } from './UI.js';
+import { UIManager } from './UIManager.js';
 
 ///////////////////////////////////////////////////////////////////////////////
 function gameInit() {
@@ -16,6 +16,7 @@ function gameInit() {
   LittleJS.setCameraPos(vec2(9, 8));
   LittleJS.setCameraScale(50);
   gameStore.state.units;
+  initUISystem();
   UIManager.init();
   
   // Add window resize listener for responsive design
@@ -61,7 +62,7 @@ function gameUpdate() {
 ///////////////////////////////////////////////////////////////////////////////
 function gameUpdatePost() {
   // called after physics and objects are updated
-  // No need for draggable logic with click-to-move
+  UIManager.render();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -131,7 +132,7 @@ function gameRender() {
 function gameRenderPost() {
   // called after objects are rendered
   // draw effects or hud that appear above all objects
-  UIManager.render();
+  // LittleJS.drawTextScreen(gameStore.state.selectedUnit?.type || '', vec2(9, 8), 128)
 }
 
 ///////////////////////////////////////////////////////////////////////////////

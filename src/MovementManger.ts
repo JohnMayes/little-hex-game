@@ -56,12 +56,18 @@ function getReachableHexSet(center: { q: number; r: number }, movementPoints: nu
 function setHexesInRange(center: { q: number; r: number }, distance: number) {
   const centerTile = grid.getHex(center);
   if (!centerTile) {
-    gameStore.state.reachableHexes = [];
+    gameStore.setState(state => ({
+      ...state,
+      reachableHexes: []
+    }));
     return;
   }
 
   const { tiles } = getReachableHexes(centerTile, distance);
-  gameStore.state.reachableHexes = tiles.map(({ q, r }) => ({ q, r }));
+  gameStore.setState(state => ({
+    ...state,
+    reachableHexes: tiles.map(({ q, r }) => ({ q, r }))
+  }));
 }
 
 function calculateMovementPath(fromPos: Point, toPos: Point, movementPoints: number) {
@@ -103,12 +109,17 @@ function selectUnit(unit: Unit) {
 
   // Select new unit
   unit.selected = true;
-  gameStore.state.selectedUnit = unit;
-
+  
   // Auto-select the hex where the unit is located
   const unitHex = unit.getHexCoords(grid);
   const unitTile = grid.getHex(unitHex);
-  gameStore.state.selectedHex = unitTile;
+  
+  // Update store properly to trigger subscriptions
+  gameStore.setState(state => ({
+    ...state,
+    selectedUnit: unit,
+    selectedHex: unitTile
+  }));
 
   // Calculate reachable hexes using cached coordinates
   setHexesInRange(unitHex, unit.remainingMovement);
@@ -116,7 +127,10 @@ function selectUnit(unit: Unit) {
 
 function selectHex(hex: { q: number; r: number; x: number; y: number }) {
   const hexTile = grid.getHex({ q: hex.q, r: hex.r });
-  gameStore.state.selectedHex = hexTile;
+  gameStore.setState(state => ({
+    ...state,
+    selectedHex: hexTile
+  }));
 }
 
 function attemptMove(unit: Unit, targetPos: Point) {
@@ -155,7 +169,10 @@ function attemptMove(unit: Unit, targetPos: Point) {
       );
 
       // Clear movement path preview while animating
-      gameStore.state.movementPath = [];
+      gameStore.setState(state => ({
+        ...state,
+        movementPath: []
+      }));
     }
   } else {
     console.log('Target hex is not reachable');
@@ -211,7 +228,10 @@ const MovementManager = {
       // Right click or ESC to deselect
       if (LittleJS.mouseWasPressed(2) || LittleJS.keyWasPressed('Escape')) {
         deselectUnit();
-        gameStore.state.selectedHex = undefined;
+        gameStore.setState(state => ({
+          ...state,
+          selectedHex: undefined
+        }));
         lastPreviewHex = null; // Reset preview cache
       }
 
@@ -245,16 +265,25 @@ const MovementManager = {
               gameStore.state.selectedUnit.movement
             );
             
-            gameStore.state.movementPath = path?.map((tile) => ({
-              x: tile.x,
-              y: tile.y
-            })) || [];
+            gameStore.setState(state => ({
+              ...state,
+              movementPath: path?.map((tile) => ({
+                x: tile.x,
+                y: tile.y
+              })) || []
+            }));
           } else {
-            gameStore.state.movementPath = [];
+            gameStore.setState(state => ({
+              ...state,
+              movementPath: []
+            }));
           }
         }
       } else {
-        gameStore.state.movementPath = [];
+        gameStore.setState(state => ({
+          ...state,
+          movementPath: []
+        }));
         lastPreviewHex = null;
       }
     }

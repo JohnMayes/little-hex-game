@@ -21,7 +21,7 @@ interface CombatState {
   visibleHexes: AxialCoordinates[];
 }
 
-interface GameState {
+export interface GameState {
   turn: number;
   movingPlayer: MovingPlayer;
   firingPlayer: MovingPlayer;

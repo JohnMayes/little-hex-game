@@ -5,7 +5,7 @@ import { Tile } from './objects/baseObjects';
 import { TerrainType, LOS_VALUES } from './types/terrain';
 import { AxialCoordinates } from 'honeycomb-grid';
 import { deselectUnit, clearFiringSelection } from './utils';
-import { setCursor } from './UI';
+import { setCursor } from './UIManager';
 
 // Cache for LOS calculations to avoid expensive recalculations
 const losCache = new Map<string, boolean>();
