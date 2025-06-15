@@ -1,6 +1,5 @@
-import { mainCanvasSize, UIObject } from "@littlejs";
+import { mainCanvasSize } from "@littlejs";
 import { createUI, UIMenu } from "./UI/createUI"
-import { gameStore } from "./store";
 
 let uiRoot: UIMenu;
 

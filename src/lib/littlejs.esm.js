@@ -5859,12 +5859,12 @@ function drawEngineSplashScreen(t)
 ///////////////////////////////////////////////////////////////////////////////
 
 // ui defaults
-let uiDefaultColor = WHITE;
+let uiDefaultColor = hsl(0,0,0,0);
 let uiDefaultLineColor = BLACK;
 let uiDefaultTextColor = BLACK;
 let uiDefaultButtonColor = hsl(0, 0, .5);
 let uiDefaultHoverColor = hsl(0, 0, .7);
-let uiDefaultLineWidth = 4;
+let uiDefaultLineWidth = 0;
 let uiDefaultFont = 'arial';
 
 // ui system
